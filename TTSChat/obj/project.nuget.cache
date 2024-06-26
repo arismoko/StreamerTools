@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "lNqiUXwEE/4=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\ari\\twitch\\ttschat\\TTSChat.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\ari\\.nuget\\packages\\raylib-cs\\6.1.1\\raylib-cs.6.1.1.nupkg.sha512",
+    "C:\\Users\\ari\\.nuget\\packages\\system.numerics.vectors\\4.5.0\\system.numerics.vectors.4.5.0.nupkg.sha512",
+    "C:\\Users\\ari\\.nuget\\packages\\system.windows.extensions\\8.0.0\\system.windows.extensions.8.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
