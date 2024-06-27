@@ -22,3 +22,4 @@ C:\Users\ari\twitch\ttschat\bin\Debug\net8.0\runtimes\osx-arm64\native\libraylib
 C:\Users\ari\twitch\ttschat\bin\Debug\net8.0\runtimes\osx-x64\native\libraylib.dylib
 C:\Users\ari\twitch\ttschat\bin\Debug\net8.0\runtimes\win-x64\native\raylib.dll
 C:\Users\ari\twitch\ttschat\bin\Debug\net8.0\runtimes\win-x86\native\raylib.dll
+C:\Users\ari\twitch\ttschat\obj\Debug\net8.0\TTSChat.sourcelink.json
