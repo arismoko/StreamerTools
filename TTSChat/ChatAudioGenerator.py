@@ -110,7 +110,16 @@ def getVoice(user):
         else:
             return "en_sample"
     return "en_sample"
-
+def saveEmulator(user,message):
+    if user == "ariasmoko" and message.strip().lower() == "!save-state":
+        win32api.keybd_event(win32con.VK_F1,0,0,0)  # Key down
+        win32api.keybd_event(win32con.VK_SHIFT,0,0,0)
+        time.sleep(0.1)  # Small delay
+        win32api.keybd_event(win32con.VK_F1,0,win32con.KEYEVENTF_KEYUP,0)  # Key up
+        win32api.keybd_event(win32con.VK_SHIFT,0,win32con.KEYEVENTF_KEYUP,0)  # Key up
+    
+        print("State saved!")
+        return True
 def isTwitchPlays(user, message):
     if user == "ariasmoko" and message.strip().lower() == "!start-twitchplays":
         global twitchPlays
