@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TTSChat")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+130dcf13a04cef8b0560b72b38f8a23794330d09")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+24266a135d1d4ea18c4e4632d29260a35ba80720")]
 [assembly: System.Reflection.AssemblyProductAttribute("TTSChat")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TTSChat")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
