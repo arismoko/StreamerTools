@@ -1,36 +1,56 @@
 ﻿using Raylib_cs;
+using System;
+using System.Diagnostics;
+using System.IO;
 using System.Numerics;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+
 public class Program
 {
-    public static Button chatButton = new Button("TTS Generator", 10, 40, 200, 50, () =>
-        {
-            System.Diagnostics.Process.Start("cmd.exe", "/c C:/Users/ari/miniconda3/envs/coquitts/python.exe ChatAudioGenerator.py");
+    [DllImport("user32.dll")]
+    static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
-            if (chatButton != null) chatButton.active = false;
-        });
-    public static Button twitchPlaysButton = new Button("Twitch Plays", 10, 100, 200, 50, () =>
-        {
-            System.Diagnostics.Process.Start("cmd.exe", "/c C:/Users/ari/miniconda3/envs/coquitts/python.exe TwitchPlays.py");
-            if (twitchPlaysButton != null) twitchPlaysButton.active = false;
-        });
-    public static void Main(string[] args)
+    static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+    const uint SWP_NOSIZE = 0x0001;
+    const uint SWP_NOMOVE = 0x0002;
+
+    public static Button chatButton = new Button("TTS Generator", 10, 40, 200, 50, () =>
     {
-        Raylib.InitWindow(800, 450, "TTS Chat");
+        StartChatAudioGenerator();
+        chatButton.active = false;
+    });
+
+    public static Button twitchPlaysButton = new Button("Twitch Plays", 10, 100, 200, 50, () =>
+    {
+        StartTwitchPlays();
+        twitchPlaysButton.active = false;
+    });
+
+    public static unsafe void Main(string[] args)
+    {
+        Raylib.InitWindow(250, 200, "TTS Chat");
         Raylib.InitAudioDevice();
         Raylib.SetTargetFPS(60);
         Raylib.SetExitKey(0); // disable exit key
+
+        // Set the window to always on top
+        IntPtr windowHandle = (IntPtr)Raylib.GetWindowHandle();
+        SetWindowPos(windowHandle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+
         while (!Raylib.WindowShouldClose())
         {
             float deltaTime = Raylib.GetFrameTime();
             chatButton?.Update(deltaTime);
-            chatButton?.Update(deltaTime);
             twitchPlaysButton?.Update(deltaTime);
+
             Raylib.BeginDrawing();
-            Raylib.ClearBackground(Color.White);
+            Raylib.ClearBackground(Color.RayWhite);
             Raylib.DrawText("TTS Chat", 10, 10, 20, Color.Black);
             chatButton?.Draw();
             twitchPlaysButton?.Draw();
-            //check for file at output.wav and play it
+
+            // Check for and play audio
             if (File.Exists("output.wav"))
             {
                 Sound sound = Raylib.LoadSound("output.wav");
@@ -39,16 +59,47 @@ public class Program
                     Raylib.PlaySound(sound);
                     File.Delete("output.wav");
                 }
-                else Raylib.TraceLog(TraceLogLevel.Error, "Failed to load sound");
+                else
+                {
+                    Raylib.TraceLog(TraceLogLevel.Error, "Failed to load sound");
+                }
             }
-
-
 
             Raylib.EndDrawing();
         }
+
         Raylib.CloseWindow();
     }
+
+    private static async void StartChatAudioGenerator()
+    {
+        await Task.Run(() =>
+        {
+            var process = new Process();
+            process.StartInfo.FileName = "cmd.exe";
+            process.StartInfo.Arguments = "/c C:/Users/ari/miniconda3/envs/coquitts/python.exe ChatAudioGenerator.py";
+            process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;  // Optionally hide the command window
+            process.Start();
+            process.WaitForExit(); // Wait for the process to exit
+            chatButton.active = true; // Re-enable the button
+        });
+    }
+
+    private static async void StartTwitchPlays()
+    {
+        await Task.Run(() =>
+        {
+            var process = new Process();
+            process.StartInfo.FileName = "cmd.exe";
+            process.StartInfo.Arguments = "/c start cmd.exe /k C:/Users/ari/miniconda3/envs/coquitts/python.exe TwitchPlays.py";
+            process.StartInfo.WindowStyle = ProcessWindowStyle.Normal;  // Optionally show the command window
+            process.Start();
+            process.WaitForExit(); // Wait for the process to exit
+            twitchPlaysButton.active = true; // Re-enable the button
+        });
+    }
 }
+
 public class Button
 {
     public string Text { get; }
@@ -86,7 +137,7 @@ public class Button
                 elapsedTime = 0f;
             }
         }
-        //check if mouse is left left clicked
+        // Check if mouse left-clicked
         if (Raylib.IsMouseButtonPressed(MouseButton.Left))
         {
             Vector2 mousePos = Raylib.GetMousePosition();

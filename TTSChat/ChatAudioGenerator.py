@@ -2,6 +2,10 @@ from TTS.api import TTS
 import os
 import re
 import socket
+import queue
+import threading
+import time
+import wave
 
 class ChatAudioGenerator:
     def __init__(self):
@@ -14,6 +18,7 @@ class ChatAudioGenerator:
         self.TWITCH_TOKEN = os.getenv('TWITCH_API_SECRET')
         self.TWITCH_USERNAME = "ariasmoko"
         self.CHANNEL = "#ariasmoko"
+        self.message_queue = queue.Queue()
 
     def connect_to_twitch(self):
         server = 'irc.chat.twitch.tv'
@@ -31,17 +36,33 @@ class ChatAudioGenerator:
         return sock
 
     def listen_for_messages(self, sock):
+        threading.Thread(target=self.process_messages).start()
         while True:
             response = sock.recv(2048).decode('utf-8')
             if self.handlePingResponse(sock, response):
                 continue
             user = self.parse_user(response)
-            # continue if user is nightbot or Nightbot
             if user == "nightbot" or user == "Nightbot":
                 continue
             voice = self.getVoice(user)
             message = self.parse_message(response)
-            self.handleMessage(message, voice)
+            if message:
+                self.message_queue.put((message, voice))
+
+    def process_messages(self):
+        while True:
+            message, voice = self.message_queue.get()
+            audio_file_path = self.handleMessage(message, voice)
+            if audio_file_path:
+                audio_duration = self.get_audio_duration(audio_file_path)
+                time.sleep(audio_duration +.5)
+
+    def get_audio_duration(self, file_path):
+        with wave.open(file_path, 'rb') as audio_file:
+            frames = audio_file.getnframes()
+            rate = audio_file.getframerate()
+            duration = frames / float(rate)
+        return duration
 
     def digit_to_word(self, match):
         digit_map = {
@@ -63,29 +84,31 @@ class ChatAudioGenerator:
 
     def generate_chat_audio(self, message, voice):
         if not message:
-            return  # Skip processing if no message is found
-        self.generate(message, voice)
+            return None
+        return self.generate(message, voice)
 
     def generate(self, message, voice):
+        file_path = "output.wav"
         self.tts.tts_to_file(
             text=message,
-            file_path="TTSCHAT/output.wav",
+            file_path=file_path,
             speaker_wav=f"{self.pathToSamples}{voice}.wav",
             language="en"
         )
+        return file_path
 
     def handleMessage(self, message, voice):
         if message:
             message = self.replace_digits_with_words(message)
             message = re.sub(r'\d+', '', message)
-            # only read the message if its over 15 characters:
             if len(message) < 15 or voice == "Nightbot":
-                return
-            message = message[:150]  # Limit message length to 150 characters
+                return None
+            message = message[:250]
             if re.match(r'^[\W_]+$', message) or message.strip() == "":
-                return
+                return None
             print(f"Message: {message}")
-            self.generate_chat_audio(message, voice)
+            return self.generate_chat_audio(message, voice)
+        return None
 
     def getVoice(self, user):
         if user:
@@ -101,6 +124,7 @@ class ChatAudioGenerator:
             sock.send("PONG\n".encode('utf-8'))
             print("WE PONGED THAT PING!")
             return True
+        return False
 
     def parse_user(self, response):
         match = re.search(r':(.*?)!.*?@.*?\.tmi\.twitch\.tv PRIVMSG #(.*?) :(.*)', response)
