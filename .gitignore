@@ -1,6 +1,7 @@
 /.vscode
 /OBS Profiles
 /models
+/node_modules
 /samples
 /venv
 .env
