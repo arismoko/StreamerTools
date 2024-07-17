@@ -1,0 +1,8 @@
+torch 
+torchvision 
+torchaudio
+pyaudio
+transformers==4.38.2
+sounddevice
+TTS
+realtimetts[all]
