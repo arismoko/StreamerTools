@@ -4,4 +4,7 @@
 /node_modules
 /samples
 /venv
+sys
+package.json
+package-lock.json
 .env
