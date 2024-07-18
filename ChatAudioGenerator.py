@@ -32,13 +32,11 @@ class TTSPlayer:
         self.stream = TextToAudioStream(self.engine, output_device_index=10)
         self.text_filters: List[Callable[[str], Optional[str]]] = []
         self.cur_voice = ""
-        self.switch_voice("en_sample")
-
+        self.cur_user = ""
     def add_filter(self, filter: Callable[[str], Optional[str]]):
         self.text_filters.append(filter)
 
     def play(self, text: str):
-        # add user as a parameter to load the voice for the user
         for filter in self.text_filters:
             newtext = filter(text)
             if newtext is None:
@@ -48,17 +46,27 @@ class TTSPlayer:
         self.stream.feed(text)
         self.stream.play()
 
-    def switch_voice(self, voice: Union[str, Path]):
-        # add user as a parameter to save the voice for the user
-        # check if the user is in the user_voice.json file
-        if self.cur_voice != str(voice):  # dont have to do this probs
-            self.engine.set_voice(str(voice))  # move this to play?
-            self.cur_voice = voice
-            # update user voice / add user voice to the user_voice.json file
+    def update_current_voice(self):
+        self.engine.set_voice(str(self.cur_voice))
 
-    # def save_user_voice(self, user: str, voice: str):
+    #TODO: Implement the following methods
+    #TODO: replace user with current user
+    def load_user(self, user: str, voice: str):
+        # Check if user_voice.json exists
+        if not Path("user_voice.json").exists():
+            print("user_voice.json does not exist")
+            return
+        voices = self.engine.get_voices()
+        if self.cur_voice not in voices:
+            print(f"Voice {self.cur_voice} not found")
+            return
+        with open("user_voice.json") as f:
+            data = json.load(f)
+            data[user] = voice
+        with open("user_voice.json", "w") as f:
+            f.write(json.dumps(data))
+        self.cur_voice = voice
 
-    # def load_user_voice(self, user: str):
 
 
 class Replacements:
@@ -126,8 +134,7 @@ class ChatAudioGenerator:
         if txt.startswith("!"):
             txt = txt[1:]
             sample, msg = txt.split(" ", maxsplit=1)
-            sample = f"{sample}"
-            self.tts.switch_voice(sample)
+            voice = f"{sample}"
             if msg:
                 return msg
         return txt
