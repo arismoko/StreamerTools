@@ -19,13 +19,11 @@ URL_REGEX = re.compile(
 
 class TTSPlayer:
     def __init__(self, model: str):
-
         self.engine = CoquiEngine(
             model_name=model,
             voices_path="./samples/",
         )
 
-        # these lines to find output device index list. select "default output"
         import sounddevice as sd
 
         print(sd.query_devices())
@@ -33,6 +31,7 @@ class TTSPlayer:
         self.text_filters: List[Callable[[str], Optional[str]]] = []
         self.cur_voice = ""
         self.cur_user = ""
+
     def add_filter(self, filter: Callable[[str], Optional[str]]):
         self.text_filters.append(filter)
 
@@ -49,24 +48,28 @@ class TTSPlayer:
     def update_current_voice(self):
         self.engine.set_voice(str(self.cur_voice))
 
-    #TODO: Implement the following methods
-    #TODO: replace user with current user
     def load_user(self, user: str, voice: str):
-        # Check if user_voice.json exists
         if not Path("user_voice.json").exists():
             print("user_voice.json does not exist")
             return
+        
         voices = self.engine.get_voices()
-        if self.cur_voice not in voices:
-            print(f"Voice {self.cur_voice} not found")
+        if voice not in voices:
+            print(f"Voice {voice} not found")
             return
-        with open("user_voice.json") as f:
-            data = json.load(f)
-            data[user] = voice
+        
+        try:
+            with open("user_voice.json") as f:
+                data = json.load(f)
+        except json.JSONDecodeError:
+            print("Error reading user_voice.json")
+            return
+        
+        data[user] = voice
         with open("user_voice.json", "w") as f:
-            f.write(json.dumps(data))
+            json.dump(data, f)
+        
         self.cur_voice = voice
-
 
 
 class Replacements:
@@ -79,7 +82,7 @@ class Replacements:
     def check_reload(self):
         modified = self.path.stat().st_mtime
         if modified != self.last_modified:
-            with open("replacements.json") as f:
+            with open(self.path) as f:
                 content = f.read()
                 data: Dict[str, Dict[str, str]] = json.loads(content)
                 self.simple = [i for i in data["simple"].items()]
@@ -117,7 +120,6 @@ class ChatAudioGenerator:
         self.tts.add_filter(Replacements())
         self.tts.add_filter(self.voice_filter)
         self.tts.add_filter(contains_url)
-        # send a test message to test the TTS
         print("TTS model loaded successfully!")
         self.default_voice = "en_sample"
         self.TWITCH_TOKEN = os.getenv("TWITCH_API_SECRET")
@@ -125,10 +127,6 @@ class ChatAudioGenerator:
         self.TWITCH_USERNAME = "ariasmoko"
         self.CHANNEL = "#ariasmoko"
         self.message_queue = queue.Queue()
-        # check if user_voice.json exists and if not make it
-        # if not Path("user_voice.json").exists():
-        # with open("user_voice.json", "w") as f:
-        # f.write(json.dumps({"default": self.default_voice}))
 
     def voice_filter(self, txt: str) -> Optional[str]:
         if txt.startswith("!"):
@@ -146,7 +144,7 @@ class ChatAudioGenerator:
         nickname = self.TWITCH_USERNAME
         channel = self.CHANNEL
 
-        sock = socket.socket();
+        sock = socket.socket()
         sock.connect((server, port))
         sock.send(f"PASS {token}\r\n".encode())
         sock.send(f"NICK {nickname}\r\n".encode())
@@ -202,6 +200,7 @@ class ChatAudioGenerator:
         if match:
             return match.group(3)
         return None
+
 
 if __name__ == "__main__":
     chat_audio_generator = ChatAudioGenerator()
